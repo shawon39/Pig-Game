@@ -1,0 +1,95 @@
+body{
+  background: url("../Image/blue-background.jpg");
+}
+
+*{
+  box-sizing: border-box;
+}
+
+#dice{
+  border: 1px solid #ddd;
+}
+
+#main-content{
+  height: 450px;
+  width: 850px;
+  background-color: #fff;
+  margin: 0 auto;
+  margin-top: 100px;
+}
+
+div h4.newgame{
+  font-family: Roboto;
+  padding-top: 30px;
+}
+
+div h4, div h2 {
+    font-family: Roboto;
+}
+
+div h4 i.fa-plus-circle{
+  padding-right: 3px;
+}
+
+.player{
+  padding-top: 30px;
+}
+
+.current-score{
+  padding-top: 45px;
+}
+
+.test{
+  background-color: green;
+}
+
+.instant-score1 {
+  background-color: green;
+  color: #fff;
+  height: fit-content;
+  padding-top: 5px;
+  margin-left: 120px;
+  width: 80px;
+}
+
+.instant-score2 {
+  background-color: green;
+  color: #fff;
+  height: fit-content;
+  width: 80px;
+  padding-top: 5px;
+  margin: 0 auto;
+  margin-left: 50px;
+}
+
+
+div h2 i.pl1 {
+  font-size: 20px;
+  color: red;
+  visibility: visible;
+}
+div h2 i.pl2 {
+  font-size: 20px;
+  color: red;
+  visibility: hidden;
+}
+
+div h2 i.lol {
+  display: none;
+}
+
+div.dice{
+  padding-top: 30px;
+}
+
+.ulala{
+  color: red;
+  font-size: 18px;
+}
+
+p.active{
+  font-size: 20px;
+}
+p.inactive{
+  font-size: 20px;
+}

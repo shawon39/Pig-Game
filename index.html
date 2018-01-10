@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Pig Game</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" type="text/css" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css?family=Roboto+Mono" rel="stylesheet">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <link href="http://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.3.0/css/font-awesome.css" rel="stylesheet" type='text/css'>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</head>
+
+<body>
+
+  <section id="main-content">
+
+    <!-- New Game -->
+    <section id="new-game">
+      <div class="text-center">
+        <h4 class="newgame"> <i class="fa fa-plus-circle" aria-hidden="true"> </i> NEW GAME </h4>
+      </div>
+    </section>
+
+    <!-- player And Total Score -->
+    <section id="player-score">
+      <div class="row player">
+        <div class="col-md-5 text-center player-right">
+          <h2 id="ball" class="ball"> Shawon <i id="playr" class="fa fa-circle pl1 activee"></i> </h2>
+          <h1 id="ulala1" class="total-score1"> 0 </h1>
+        </div>
+        <div class="col-md-2 text-center dice">
+        <img id="dice" alt="" src="" width="90" height="90">
+        </div>
+        <div class="col-md-5 text-center player-left">
+            <h2> Sizan <i id="playr2" class="fa fa-circle pl2 inactivee"></i> </h2>
+          <h1 id="ulala2" class="total-score2"> 0 </h1>
+        </div>
+      </div>
+    </section>
+
+    <!-- player's Current score -->
+    <section id="crnt-score">
+      <div class="row current-score">
+        <div class="col-md-4 text-center">
+          <div class="instant-score1">
+            <p>Current</p>
+            <p id="score" class="score-1 active">0</p>
+          </div>
+        </div>
+        <div class="col-md-4 text-center">
+          <h4 id="Roll-dice" class="Roll-dice"><i id="fa-refresh" class="fa fa-refresh" aria-hidden="true"></i> ROLL DICE </h4>
+          <br>
+          <h4 id="hold" class="hold"><i id="fa-upload" class="fa fa-upload" aria-hidden="true"></i> HOLD </h4>
+        </div>
+        <div class="col-md-4 text-center">
+          <div class="instant-score2">
+            <p>Current</p>
+            <p id="score2" class="score-2 inactive">0</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </section>
+
+  <script src="script.js"></script>
+</body>
+
+</html>
