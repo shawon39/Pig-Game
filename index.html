@@ -2,69 +2,161 @@
 <html lang="en">
 
 <head>
-  <title>Pig Game</title>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" type="text/css" href="css/style.css">
-  <link href="https://fonts.googleapis.com/css?family=Roboto+Mono" rel="stylesheet">
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-  <link href="http://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.3.0/css/font-awesome.css" rel="stylesheet" type='text/css'>
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f0c29" />
+  <meta name="description"
+    content="Pig Game — a fast, modern, two-player dice game. Roll, bank your points, and race to the target. First to reach the goal wins!" />
+  <title>Pig Game · Modern Dice Duel</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎲</text></svg>" />
 </head>
 
 <body>
+  <!-- Ambient animated background -->
+  <div class="backdrop" aria-hidden="true">
+    <span class="orb orb--1"></span>
+    <span class="orb orb--2"></span>
+    <span class="orb orb--3"></span>
+    <div class="grid-glow"></div>
+  </div>
 
-  <section id="main-content">
+  <!-- Confetti canvas for the win celebration -->
+  <canvas id="confetti" class="confetti" aria-hidden="true"></canvas>
 
-    <!-- New Game -->
-    <section id="new-game">
-      <div class="text-center">
-        <h4 class="newgame"> <i class="fa fa-plus-circle" aria-hidden="true"> </i> NEW GAME </h4>
-      </div>
-    </section>
-
-    <!-- player And Total Score -->
-    <section id="player-score">
-      <div class="row player">
-        <div class="col-md-5 text-center player-right">
-          <h2 id="ball" class="ball"> Shawon <i id="playr" class="fa fa-circle pl1 activee"></i> </h2>
-          <h1 id="ulala1" class="total-score1"> 0 </h1>
-        </div>
-        <div class="col-md-2 text-center dice">
-        <img id="dice" alt="" src="" width="90" height="90">
-        </div>
-        <div class="col-md-5 text-center player-left">
-            <h2> Sizan <i id="playr2" class="fa fa-circle pl2 inactivee"></i> </h2>
-          <h1 id="ulala2" class="total-score2"> 0 </h1>
+  <main class="app">
+    <!-- Header -->
+    <header class="app__header">
+      <div class="brand">
+        <span class="brand__mark" aria-hidden="true">🎲</span>
+        <div class="brand__text">
+          <h1 class="brand__title">PIG&nbsp;GAME</h1>
+          <p class="brand__tag">Roll · Bank · Win</p>
         </div>
       </div>
-    </section>
 
-    <!-- player's Current score -->
-    <section id="crnt-score">
-      <div class="row current-score">
-        <div class="col-md-4 text-center">
-          <div class="instant-score1">
-            <p>Current</p>
-            <p id="score" class="score-1 active">0</p>
+      <div class="header-actions">
+        <div class="target" title="Winning score">
+          <span class="target__label">Target</span>
+          <div class="target__control">
+            <button class="target__step" id="targetDown" aria-label="Lower target score">–</button>
+            <span class="target__value" id="targetValue">100</span>
+            <button class="target__step" id="targetUp" aria-label="Raise target score">+</button>
           </div>
         </div>
-        <div class="col-md-4 text-center">
-          <h4 id="Roll-dice" class="Roll-dice"><i id="fa-refresh" class="fa fa-refresh" aria-hidden="true"></i> ROLL DICE </h4>
-          <br>
-          <h4 id="hold" class="hold"><i id="fa-upload" class="fa fa-upload" aria-hidden="true"></i> HOLD </h4>
-        </div>
-        <div class="col-md-4 text-center">
-          <div class="instant-score2">
-            <p>Current</p>
-            <p id="score2" class="score-2 inactive">0</p>
-          </div>
-        </div>
+        <button class="icon-btn" id="soundToggle" aria-pressed="true" aria-label="Toggle sound" title="Sound on/off">
+          <span class="icon-btn__on">🔊</span>
+          <span class="icon-btn__off">🔇</span>
+        </button>
       </div>
+    </header>
+
+    <!-- Game board -->
+    <section class="board" aria-label="Game board">
+      <!-- Player 1 -->
+      <article class="player player--1 is-active" id="player-0" data-player="0">
+        <div class="player__top">
+          <span class="player__dot" aria-hidden="true"></span>
+          <h2 class="player__name" id="name-0" contenteditable="true" spellcheck="false"
+            aria-label="Player 1 name">Shawon</h2>
+          <span class="player__wins" id="wins-0" title="Games won">★ 0</span>
+        </div>
+        <div class="player__score" id="score-0">0</div>
+        <div class="player__current">
+          <span class="player__current-label">Current</span>
+          <span class="player__current-value" id="current-0">0</span>
+        </div>
+        <div class="player__badge" aria-hidden="true">
+          <span class="turn-pill">Your turn</span>
+        </div>
+      </article>
+
+      <!-- Center console -->
+      <div class="console">
+        <div class="dice-stage" id="diceStage">
+          <div class="dice" id="dice" role="img" aria-label="Dice">
+            <div class="dice__face dice__face--1"><span class="pip p-cc"></span></div>
+            <div class="dice__face dice__face--2"><span class="pip p-tl"></span><span class="pip p-br"></span></div>
+            <div class="dice__face dice__face--3"><span class="pip p-tl"></span><span class="pip p-cc"></span><span
+                class="pip p-br"></span></div>
+            <div class="dice__face dice__face--4"><span class="pip p-tl"></span><span class="pip p-tr"></span><span
+                class="pip p-bl"></span><span class="pip p-br"></span></div>
+            <div class="dice__face dice__face--5"><span class="pip p-tl"></span><span class="pip p-tr"></span><span
+                class="pip p-cc"></span><span class="pip p-bl"></span><span class="pip p-br"></span></div>
+            <div class="dice__face dice__face--6"><span class="pip p-tl"></span><span class="pip p-tr"></span><span
+                class="pip p-cl"></span><span class="pip p-cr"></span><span class="pip p-bl"></span><span
+                class="pip p-br"></span></div>
+          </div>
+          <div class="dice-shadow" aria-hidden="true"></div>
+        </div>
+
+        <p class="status" id="status" role="status" aria-live="polite">Shawon, roll the dice to start!</p>
+
+        <div class="controls">
+          <button class="btn btn--roll" id="rollBtn">
+            <span class="btn__icon" aria-hidden="true">🎲</span>
+            <span class="btn__text">Roll</span>
+            <kbd class="btn__key">R</kbd>
+          </button>
+          <button class="btn btn--hold" id="holdBtn">
+            <span class="btn__icon" aria-hidden="true">🏦</span>
+            <span class="btn__text">Hold</span>
+            <kbd class="btn__key">H</kbd>
+          </button>
+        </div>
+
+        <button class="btn btn--new" id="newBtn">
+          <span class="btn__icon" aria-hidden="true">↻</span>
+          <span class="btn__text">New Game</span>
+          <kbd class="btn__key">N</kbd>
+        </button>
+      </div>
+
+      <!-- Player 2 -->
+      <article class="player player--2" id="player-1" data-player="1">
+        <div class="player__top">
+          <span class="player__dot" aria-hidden="true"></span>
+          <h2 class="player__name" id="name-1" contenteditable="true" spellcheck="false"
+            aria-label="Player 2 name">Sizan</h2>
+          <span class="player__wins" id="wins-1" title="Games won">★ 0</span>
+        </div>
+        <div class="player__score" id="score-1">0</div>
+        <div class="player__current">
+          <span class="player__current-label">Current</span>
+          <span class="player__current-value" id="current-1">0</span>
+        </div>
+        <div class="player__badge" aria-hidden="true">
+          <span class="turn-pill">Your turn</span>
+        </div>
+      </article>
     </section>
 
-  </section>
+    <footer class="app__footer">
+      <span>Roll to accumulate. Bank before you roll a <strong>1</strong>.</span>
+      <span class="app__hint">Tip: click a name to rename · press <kbd>R</kbd>/<kbd>H</kbd>/<kbd>N</kbd></span>
+    </footer>
+  </main>
+
+  <!-- Win overlay -->
+  <div class="overlay" id="overlay" aria-hidden="true">
+    <div class="overlay__card" role="dialog" aria-modal="true" aria-labelledby="winTitle">
+      <div class="overlay__crown" aria-hidden="true">👑</div>
+      <p class="overlay__eyebrow">Winner</p>
+      <h2 class="overlay__title" id="winTitle">Shawon</h2>
+      <p class="overlay__sub" id="winSub">reached 100 points!</p>
+      <button class="btn btn--roll overlay__btn" id="playAgainBtn">
+        <span class="btn__icon" aria-hidden="true">🎉</span>
+        <span class="btn__text">Play Again</span>
+      </button>
+    </div>
+  </div>
 
   <script src="script.js"></script>
 </body>
