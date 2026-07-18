@@ -9,10 +9,13 @@
   'use strict';
 
   /* ---------- Constants & state ---------- */
-  const STORAGE_KEY = 'pig-game.v2';
+  const STORAGE_KEY = 'pig-game.v3';
   const MIN_TARGET = 20;
   const MAX_TARGET = 300;
   const TARGET_STEP = 10;
+  const MAX_NAME = 16;
+
+  const AVATAR_SET = ['🦊', '🐼', '🐯', '🦄', '🐸', '🐙', '🚀', '👾', '🤖', '🐲', '🦁', '🐨', '🦉', '⚡', '🌟', '🎮'];
 
   const state = {
     scores: [0, 0],
@@ -22,9 +25,11 @@
     playing: true,
     rolling: false,
     locked: false,      // true during a pending turn transition (hold/bust pause)
-    names: ['Shawon', 'Sizan'],
+    names: ['Player 1', 'Player 2'],
     wins: [0, 0],
+    avatars: ['🦊', '🐼'],
     sound: true,
+    theme: 'light',
   };
 
   // Container rotation (deg) that brings each die value flat to the front.
@@ -37,18 +42,23 @@
     6: { x: 0,   y: 180 },
   };
 
-  // Running (accumulated) rotation so the die always spins forward.
-  let accX = 0;
+  let accX = 0; // accumulated dice rotation so it always spins forward
   let accY = 0;
 
   /* ---------- Element refs ---------- */
   const $ = (id) => document.getElementById(id);
   const el = {
+    board: $('board'),
     players: [$('player-0'), $('player-1')],
     scores: [$('score-0'), $('score-1')],
     currents: [$('current-0'), $('current-1')],
     names: [$('name-0'), $('name-1')],
     wins: [$('wins-0'), $('wins-1')],
+    avatars: [$('avatar-0'), $('avatar-1')],
+    banked: [$('banked-0'), $('banked-1')],
+    pending: [$('pending-0'), $('pending-1')],
+    plabels: [$('plabel-0'), $('plabel-1')],
+    progress: [$('progress-0'), $('progress-1')],
     dice: $('dice'),
     diceStage: $('diceStage'),
     status: $('status'),
@@ -59,9 +69,11 @@
     targetUp: $('targetUp'),
     targetDown: $('targetDown'),
     soundToggle: $('soundToggle'),
+    themeToggle: $('themeToggle'),
     overlay: $('overlay'),
     winTitle: $('winTitle'),
     winSub: $('winSub'),
+    winAvatar: $('winAvatar'),
     playAgainBtn: $('playAgainBtn'),
     confetti: $('confetti'),
   };
@@ -72,8 +84,10 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         names: state.names,
         wins: state.wins,
+        avatars: state.avatars,
         target: state.target,
         sound: state.sound,
+        theme: state.theme,
       }));
     } catch (e) { /* storage unavailable — ignore */ }
   }
@@ -82,15 +96,18 @@
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
-      const data = JSON.parse(raw);
-      if (Array.isArray(data.names) && data.names.length === 2) state.names = data.names;
-      if (Array.isArray(data.wins) && data.wins.length === 2) state.wins = data.wins.map((n) => +n || 0);
-      if (typeof data.target === 'number') state.target = clampTarget(data.target);
-      if (typeof data.sound === 'boolean') state.sound = data.sound;
+      const d = JSON.parse(raw);
+      if (Array.isArray(d.names) && d.names.length === 2) state.names = d.names;
+      if (Array.isArray(d.wins) && d.wins.length === 2) state.wins = d.wins.map((n) => +n || 0);
+      if (Array.isArray(d.avatars) && d.avatars.length === 2) state.avatars = d.avatars;
+      if (typeof d.target === 'number') state.target = clampTarget(d.target);
+      if (typeof d.sound === 'boolean') state.sound = d.sound;
+      if (d.theme === 'light' || d.theme === 'dark') state.theme = d.theme;
     } catch (e) { /* corrupt/unavailable — ignore */ }
   }
 
   const clampTarget = (t) => Math.max(MIN_TARGET, Math.min(MAX_TARGET, Math.round(t / TARGET_STEP) * TARGET_STEP));
+  const defaultName = (i) => (i === 0 ? 'Player 1' : 'Player 2');
 
   /* ---------- Sound (Web Audio, no assets) ---------- */
   let audioCtx = null;
@@ -118,9 +135,8 @@
     land(v) { tone(300 + v * 40, 0.12, 'sine', 0.12); },
     bust() { tone(200, 0.18, 'sawtooth', 0.14); tone(120, 0.28, 'sawtooth', 0.12, 0.08); },
     hold() { tone(440, 0.1, 'sine', 0.12); tone(660, 0.14, 'sine', 0.1, 0.08); },
-    win() {
-      [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.25, 'sine', 0.14, i * 0.12));
-    },
+    tick() { tone(520, 0.06, 'square', 0.06); },
+    win() { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.25, 'sine', 0.14, i * 0.12)); },
   };
 
   /* ---------- Rendering ---------- */
@@ -138,6 +154,19 @@
     requestAnimationFrame(step);
   }
 
+  function renderProgress() {
+    for (let i = 0; i < 2; i++) {
+      const bankedPct = Math.max(0, Math.min(100, (state.scores[i] / state.target) * 100));
+      const rawPending = i === state.active && state.playing ? (state.current / state.target) * 100 : 0;
+      const pendingPct = Math.max(0, Math.min(100 - bankedPct, rawPending));
+      el.banked[i].parentElement.style.setProperty('--banked', bankedPct + '%');
+      el.banked[i].parentElement.style.setProperty('--pending', pendingPct + '%');
+      el.plabels[i].textContent = `${state.scores[i]} / ${state.target}`;
+      el.progress[i].setAttribute('aria-valuemax', state.target);
+      el.progress[i].setAttribute('aria-valuenow', state.scores[i]);
+    }
+  }
+
   function renderScores(animate) {
     state.scores.forEach((s, i) => {
       const node = el.scores[i];
@@ -151,6 +180,8 @@
         node.textContent = s;
       }
     });
+    renderProgress();
+    renderLeading();
   }
 
   function renderCurrent(pop) {
@@ -163,6 +194,7 @@
       void node.offsetWidth;
       node.classList.add('pop');
     }
+    renderProgress();
   }
 
   function renderActive() {
@@ -170,20 +202,36 @@
       p.classList.toggle('is-active', i === state.active && state.playing);
       p.classList.remove('is-winner', 'is-loser');
     });
+    if (state.playing) el.board.setAttribute('data-active', state.active);
+  }
+
+  function renderLeading() {
+    let leader = -1;
+    if (state.scores[0] !== state.scores[1] && Math.max(state.scores[0], state.scores[1]) > 0) {
+      leader = state.scores[0] > state.scores[1] ? 0 : 1;
+    }
+    el.players.forEach((p, i) => p.classList.toggle('is-leading', i === leader && state.playing));
   }
 
   function renderNames() {
     state.names.forEach((n, i) => { if (el.names[i].textContent !== n) el.names[i].textContent = n; });
   }
 
+  function renderAvatars() {
+    state.avatars.forEach((a, i) => {
+      el.avatars[i].textContent = a;
+    });
+  }
+
   function renderWins() {
-    state.wins.forEach((w, i) => { el.wins[i].textContent = '★ ' + w; });
+    state.wins.forEach((w, i) => { el.wins[i].textContent = `🏆 ${w} ${w === 1 ? 'win' : 'wins'}`; });
   }
 
   function renderTarget() {
     el.targetValue.textContent = state.target;
     el.targetDown.disabled = state.target <= MIN_TARGET;
     el.targetUp.disabled = state.target >= MAX_TARGET;
+    renderProgress();
   }
 
   function setStatus(text, kind) {
@@ -201,8 +249,20 @@
     el.holdBtn.disabled = busy || state.current === 0;
   }
 
+  /* ---------- Theme ---------- */
+  function applyTheme() {
+    document.documentElement.setAttribute('data-theme', state.theme);
+    document.querySelector('meta[name="theme-color"]').setAttribute('content', state.theme === 'dark' ? '#0b1020' : '#6d5cff');
+  }
+
+  function toggleTheme() {
+    state.theme = state.theme === 'dark' ? 'light' : 'dark';
+    applyTheme();
+    save();
+    sfx.tick();
+  }
+
   /* ---------- Dice animation ---------- */
-  // Smallest angle >= current + minSpin whose value mod 360 matches `residue`.
   function nextAngle(current, residue, minSpin) {
     const base = ((residue % 360) + 360) % 360;
     const k = Math.ceil((current + minSpin - base) / 360);
@@ -228,13 +288,11 @@
     sfx.roll();
     spinDiceTo(value);
 
-    // Resolve outcome after the tumble settles.
     window.setTimeout(() => {
       el.dice.classList.remove('rolling');
       state.rolling = false;
 
       if (value === 1) {
-        // Bust: lose current, pass turn.
         sfx.bust();
         state.current = 0;
         state.locked = true;
@@ -243,7 +301,7 @@
         void el.diceStage.offsetWidth;
         el.diceStage.classList.add('bust');
         renderCurrent(false);
-        setStatus(`💥 ${state.names[state.active]} rolled a 1 and busts!`, 'bust');
+        setStatus(`💥 ${state.names[state.active]} rolled a 1 — turn lost!`, 'bust');
         window.setTimeout(switchPlayer, 850);
       } else {
         sfx.land(value);
@@ -251,9 +309,9 @@
         renderCurrent(true);
         const total = state.scores[state.active] + state.current;
         if (total >= state.target) {
-          setStatus(`${state.names[state.active]} could win — bank it! (${total})`, 'good');
+          setStatus(`${state.names[state.active]} can win — hit Hold! (${total})`, 'good');
         } else {
-          setStatus(`${state.names[state.active]} rolled a ${value}. Roll again or hold.`);
+          setStatus(`${state.names[state.active]} rolled a ${value} — roll again or hold.`);
         }
         setControls();
       }
@@ -263,7 +321,7 @@
   function hold() {
     if (state.rolling || state.locked || !state.playing || state.current === 0) return;
     sfx.hold();
-    const prev = state.scores[state.active];
+    const banked = state.current;
     state.scores[state.active] += state.current;
     state.current = 0;
     renderScores(true);
@@ -274,7 +332,7 @@
     } else {
       state.locked = true;
       setControls();
-      setStatus(`${state.names[state.active]} banked ${state.scores[state.active] - prev}. Now ${state.scores[state.active]}.`, 'good');
+      setStatus(`${state.names[state.active]} banked ${banked} — now on ${state.scores[state.active]}.`, 'good');
       window.setTimeout(switchPlayer, 650);
     }
   }
@@ -298,14 +356,16 @@
     setControls();
 
     el.players.forEach((p, i) => {
-      p.classList.remove('is-active');
+      p.classList.remove('is-active', 'is-leading');
       p.classList.toggle('is-winner', i === index);
       p.classList.toggle('is-loser', i !== index);
     });
+    el.board.setAttribute('data-active', index);
 
     setStatus(`🏆 ${state.names[index]} wins with ${state.scores[index]} points!`, 'good');
     sfx.win();
 
+    el.winAvatar.textContent = state.avatars[index];
     el.winTitle.textContent = state.names[index];
     el.winSub.textContent = `reached ${state.scores[index]} points!`;
     el.overlay.classList.add('is-open');
@@ -325,6 +385,7 @@
     el.overlay.setAttribute('aria-hidden', 'true');
     el.dice.classList.remove('rolling');
     el.diceStage.classList.remove('bust');
+    el.players.forEach((p) => p.classList.remove('is-winner', 'is-loser', 'is-leading'));
     renderScores(false);
     renderCurrent(false);
     renderActive();
@@ -335,34 +396,42 @@
 
   /* ---------- Target control ---------- */
   function changeTarget(delta) {
-    if (!canEditSettings()) return;
+    if (!state.playing) return;
     state.target = clampTarget(state.target + delta * TARGET_STEP);
     renderTarget();
     save();
+    sfx.tick();
     if (state.scores[0] === 0 && state.scores[1] === 0 && state.current === 0) {
       setStatus(`First to ${state.target} wins — ${state.names[state.active]}, roll to start!`);
     }
   }
 
-  // Only allow retargeting before the game has meaningfully started.
-  function canEditSettings() {
-    return state.playing;
-  }
-
   /* ---------- Names ---------- */
   function commitName(i) {
     let text = el.names[i].textContent.replace(/\s+/g, ' ').trim();
-    if (!text) text = i === 0 ? 'Player 1' : 'Player 2';
-    if (text.length > 16) text = text.slice(0, 16);
+    if (!text) text = defaultName(i);
+    if (text.length > MAX_NAME) text = text.slice(0, MAX_NAME);
     state.names[i] = text;
     el.names[i].textContent = text;
     save();
-    if (state.playing && !state.rolling) {
-      // refresh any status that references the current player's name
-      if (state.current === 0 && state.scores[0] === 0 && state.scores[1] === 0) {
-        setStatus(`${state.names[state.active]}, roll the dice to start!`);
-      }
+    if (state.playing && !state.rolling && state.current === 0 &&
+        state.scores[0] === 0 && state.scores[1] === 0) {
+      setStatus(`${state.names[state.active]}, roll the dice to start!`);
     }
+  }
+
+  /* ---------- Avatars ---------- */
+  function cycleAvatar(i) {
+    const cur = AVATAR_SET.indexOf(state.avatars[i]);
+    let next = (cur + 1) % AVATAR_SET.length;
+    if (AVATAR_SET[next] === state.avatars[1 - i]) next = (next + 1) % AVATAR_SET.length; // avoid a clash
+    state.avatars[i] = AVATAR_SET[next];
+    el.avatars[i].textContent = state.avatars[i];
+    el.avatars[i].classList.remove('pop');
+    void el.avatars[i].offsetWidth;
+    el.avatars[i].classList.add('pop');
+    save();
+    sfx.tick();
   }
 
   /* ---------- Sound toggle ---------- */
@@ -387,10 +456,10 @@
 
   function launchConfetti() {
     sizeCanvas();
-    const colors = ['#ff5f8f', '#ff9d6c', '#4facfe', '#38f9d7', '#ffd76a', '#b388ff'];
+    const colors = ['#7c5cff', '#a855f7', '#06b6d4', '#14b8a6', '#f59e0b', '#22c55e', '#ef4444'];
     const W = window.innerWidth;
     confettiPieces = [];
-    const count = Math.min(180, Math.floor(W / 6));
+    const count = Math.min(200, Math.floor(W / 5));
     for (let i = 0; i < count; i++) {
       confettiPieces.push({
         x: Math.random() * W,
@@ -445,13 +514,15 @@
     el.holdBtn.addEventListener('click', hold);
     el.newBtn.addEventListener('click', newGame);
     el.playAgainBtn.addEventListener('click', newGame);
-    el.dice.addEventListener('click', () => { if (!state.rolling && state.playing) rollDice(); });
+    el.dice.addEventListener('click', () => { if (!state.rolling && !state.locked && state.playing) rollDice(); });
 
     el.targetUp.addEventListener('click', () => changeTarget(1));
     el.targetDown.addEventListener('click', () => changeTarget(-1));
     el.soundToggle.addEventListener('click', toggleSound);
+    el.themeToggle.addEventListener('click', toggleTheme);
 
-    // Ripple origin for buttons
+    el.avatars.forEach((btn, i) => btn.addEventListener('click', () => cycleAvatar(i)));
+
     document.querySelectorAll('.btn').forEach((btn) => {
       btn.addEventListener('pointermove', (e) => {
         const rect = btn.getBoundingClientRect();
@@ -460,7 +531,6 @@
       });
     });
 
-    // Editable names
     el.names.forEach((node, i) => {
       node.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') { e.preventDefault(); node.blur(); }
@@ -468,10 +538,8 @@
       node.addEventListener('blur', () => commitName(i));
     });
 
-    // Keyboard shortcuts (ignore while typing a name)
     document.addEventListener('keydown', (e) => {
-      const typing = document.activeElement && document.activeElement.isContentEditable;
-      if (typing) return;
+      if (document.activeElement && document.activeElement.isContentEditable) return;
       const k = e.key.toLowerCase();
       if (el.overlay.classList.contains('is-open')) {
         if (k === 'n' || k === 'enter' || k === ' ') { e.preventDefault(); newGame(); }
@@ -480,6 +548,7 @@
       if (k === 'r') { e.preventDefault(); rollDice(); }
       else if (k === 'h') { e.preventDefault(); hold(); }
       else if (k === 'n') { e.preventDefault(); newGame(); }
+      else if (k === 't') { e.preventDefault(); toggleTheme(); }
     });
 
     window.addEventListener('resize', () => { if (confettiRAF) sizeCanvas(); });
@@ -488,7 +557,10 @@
   /* ---------- Init ---------- */
   function init() {
     load();
+    applyTheme();
+    el.soundToggle.setAttribute('aria-pressed', String(state.sound));
     renderNames();
+    renderAvatars();
     renderWins();
     renderTarget();
     renderScores(false);

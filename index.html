@@ -1,18 +1,18 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#0f0c29" />
+  <meta name="theme-color" content="#6d5cff" />
   <meta name="description"
-    content="Pig Game — a fast, modern, two-player dice game. Roll, bank your points, and race to the target. First to reach the goal wins!" />
-  <title>Pig Game · Modern Dice Duel</title>
+    content="Pig Game — a crisp, modern, two-player dice game. Roll to build points, bank before you bust, and race to the target. First to the goal wins!" />
+  <title>Pig Game · Dice Duel</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap"
     rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <link rel="icon"
@@ -20,15 +20,13 @@
 </head>
 
 <body>
-  <!-- Ambient animated background -->
+  <!-- Soft ambient background -->
   <div class="backdrop" aria-hidden="true">
-    <span class="orb orb--1"></span>
-    <span class="orb orb--2"></span>
-    <span class="orb orb--3"></span>
-    <div class="grid-glow"></div>
+    <span class="blob blob--1"></span>
+    <span class="blob blob--2"></span>
+    <span class="blob blob--3"></span>
   </div>
 
-  <!-- Confetti canvas for the win celebration -->
   <canvas id="confetti" class="confetti" aria-hidden="true"></canvas>
 
   <main class="app">
@@ -37,14 +35,14 @@
       <div class="brand">
         <span class="brand__mark" aria-hidden="true">🎲</span>
         <div class="brand__text">
-          <h1 class="brand__title">PIG&nbsp;GAME</h1>
+          <h1 class="brand__title">Pig&nbsp;Game</h1>
           <p class="brand__tag">Roll · Bank · Win</p>
         </div>
       </div>
 
       <div class="header-actions">
-        <div class="target" title="Winning score">
-          <span class="target__label">Target</span>
+        <div class="target" title="Score needed to win">
+          <span class="target__label">Play to</span>
           <div class="target__control">
             <button class="target__step" id="targetDown" aria-label="Lower target score">–</button>
             <span class="target__value" id="targetValue">100</span>
@@ -55,26 +53,41 @@
           <span class="icon-btn__on">🔊</span>
           <span class="icon-btn__off">🔇</span>
         </button>
+        <button class="icon-btn" id="themeToggle" aria-label="Toggle light or dark theme" title="Light / dark theme">
+          <span class="icon-btn__light">🌙</span>
+          <span class="icon-btn__dark">☀️</span>
+        </button>
       </div>
     </header>
 
     <!-- Game board -->
-    <section class="board" aria-label="Game board">
+    <section class="board" id="board" data-active="0" aria-label="Game board">
       <!-- Player 1 -->
       <article class="player player--1 is-active" id="player-0" data-player="0">
-        <div class="player__top">
-          <span class="player__dot" aria-hidden="true"></span>
-          <h2 class="player__name" id="name-0" contenteditable="true" spellcheck="false"
-            aria-label="Player 1 name">Shawon</h2>
-          <span class="player__wins" id="wins-0" title="Games won">★ 0</span>
+        <div class="player__head">
+          <div class="player__avatar-wrap">
+            <button class="player__avatar" id="avatar-0" aria-label="Change Player 1 avatar" title="Click to change">🦊</button>
+            <span class="player__lead" id="lead-0" aria-hidden="true" title="In the lead">👑</span>
+          </div>
+          <div class="player__id">
+            <h2 class="player__name" id="name-0" contenteditable="true" spellcheck="false"
+              aria-label="Player 1 name">Player 1</h2>
+            <span class="player__wins" id="wins-0" title="Games won">🏆 0 wins</span>
+          </div>
+          <span class="player__badge" aria-hidden="true"><span class="turn-pill">Turn</span></span>
         </div>
+
         <div class="player__score" id="score-0">0</div>
-        <div class="player__current">
-          <span class="player__current-label">Current</span>
-          <span class="player__current-value" id="current-0">0</span>
+
+        <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress-0">
+          <div class="progress__banked" id="banked-0"></div>
+          <div class="progress__pending" id="pending-0"></div>
+          <span class="progress__label" id="plabel-0">0 / 100</span>
         </div>
-        <div class="player__badge" aria-hidden="true">
-          <span class="turn-pill">Your turn</span>
+
+        <div class="player__current">
+          <span class="player__current-label">This turn</span>
+          <span class="player__current-value" id="current-0">0</span>
         </div>
       </article>
 
@@ -97,7 +110,7 @@
           <div class="dice-shadow" aria-hidden="true"></div>
         </div>
 
-        <p class="status" id="status" role="status" aria-live="polite">Shawon, roll the dice to start!</p>
+        <p class="status" id="status" role="status" aria-live="polite">Player 1, roll to start!</p>
 
         <div class="controls">
           <button class="btn btn--roll" id="rollBtn">
@@ -121,38 +134,49 @@
 
       <!-- Player 2 -->
       <article class="player player--2" id="player-1" data-player="1">
-        <div class="player__top">
-          <span class="player__dot" aria-hidden="true"></span>
-          <h2 class="player__name" id="name-1" contenteditable="true" spellcheck="false"
-            aria-label="Player 2 name">Sizan</h2>
-          <span class="player__wins" id="wins-1" title="Games won">★ 0</span>
+        <div class="player__head">
+          <div class="player__avatar-wrap">
+            <button class="player__avatar" id="avatar-1" aria-label="Change Player 2 avatar" title="Click to change">🐼</button>
+            <span class="player__lead" id="lead-1" aria-hidden="true" title="In the lead">👑</span>
+          </div>
+          <div class="player__id">
+            <h2 class="player__name" id="name-1" contenteditable="true" spellcheck="false"
+              aria-label="Player 2 name">Player 2</h2>
+            <span class="player__wins" id="wins-1" title="Games won">🏆 0 wins</span>
+          </div>
+          <span class="player__badge" aria-hidden="true"><span class="turn-pill">Turn</span></span>
         </div>
+
         <div class="player__score" id="score-1">0</div>
-        <div class="player__current">
-          <span class="player__current-label">Current</span>
-          <span class="player__current-value" id="current-1">0</span>
+
+        <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress-1">
+          <div class="progress__banked" id="banked-1"></div>
+          <div class="progress__pending" id="pending-1"></div>
+          <span class="progress__label" id="plabel-1">0 / 100</span>
         </div>
-        <div class="player__badge" aria-hidden="true">
-          <span class="turn-pill">Your turn</span>
+
+        <div class="player__current">
+          <span class="player__current-label">This turn</span>
+          <span class="player__current-value" id="current-1">0</span>
         </div>
       </article>
     </section>
 
     <footer class="app__footer">
-      <span>Roll to accumulate. Bank before you roll a <strong>1</strong>.</span>
-      <span class="app__hint">Tip: click a name to rename · press <kbd>R</kbd>/<kbd>H</kbd>/<kbd>N</kbd></span>
+      <span class="app__rule">Keep rolling to grow your turn total — but roll a <strong>1</strong> and you lose it. Bank with <strong>Hold</strong>.</span>
+      <span class="app__hint">Click a name or avatar to customize · <kbd>R</kbd> roll · <kbd>H</kbd> hold · <kbd>N</kbd> new</span>
     </footer>
   </main>
 
   <!-- Win overlay -->
   <div class="overlay" id="overlay" aria-hidden="true">
     <div class="overlay__card" role="dialog" aria-modal="true" aria-labelledby="winTitle">
-      <div class="overlay__crown" aria-hidden="true">👑</div>
-      <p class="overlay__eyebrow">Winner</p>
-      <h2 class="overlay__title" id="winTitle">Shawon</h2>
+      <div class="overlay__avatar" id="winAvatar" aria-hidden="true">🦊</div>
+      <p class="overlay__eyebrow">🎉 Winner 🎉</p>
+      <h2 class="overlay__title" id="winTitle">Player 1</h2>
       <p class="overlay__sub" id="winSub">reached 100 points!</p>
       <button class="btn btn--roll overlay__btn" id="playAgainBtn">
-        <span class="btn__icon" aria-hidden="true">🎉</span>
+        <span class="btn__icon" aria-hidden="true">🚀</span>
         <span class="btn__text">Play Again</span>
       </button>
     </div>

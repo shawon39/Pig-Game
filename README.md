@@ -18,15 +18,19 @@ First player to reach the **target score** (default **100**) wins.
 
 ## Features
 
-- 🎲 **True 3D dice** rendered entirely in CSS — crisp at any size, no images to load.
+- 🎲 **True 3D dice** rendered entirely in CSS — crisp at any size, with pips that tint to the active player.
+- 📊 **Live progress bars** — each player's banked score plus a striped "pending" segment for the current turn, so the race is readable at a glance.
 - ✨ **Fluid animations** — tumbling dice, animated score counters, active-player glow, bust shake, and a confetti win celebration.
+- 🌗 **Light & dark themes** — bright by default, with a refined dark mode a tap away (`T`).
+- 🟢 **Semantic controls** — green **Roll** (keep going) and amber **Hold** (bank it) read instantly.
+- 👑 **Leading indicator** — a crown marks whoever's ahead.
 - 🎯 **Adjustable target** score (20–300).
-- ✏️ **Editable player names** (click a name to rename).
+- ✏️ **Custom players** — click a name to rename (defaults: Player 1 / Player 2), click an avatar to change it.
 - 🔊 **Sound effects** via the Web Audio API, with a mute toggle.
-- ⌨️ **Keyboard shortcuts** — `R` roll · `H` hold · `N` new game.
+- ⌨️ **Keyboard shortcuts** — `R` roll · `H` hold · `N` new game · `T` theme.
 - 📱 **Fully responsive** — plays great on phone, tablet, and desktop.
-- ♿ **Accessible** — live status updates and reduced-motion support.
-- 💾 Remembers names, wins tally, target, and sound preference (localStorage).
+- ♿ **Accessible** — live status updates, progressbar roles, and reduced-motion support.
+- 💾 Remembers names, avatars, wins tally, target, theme, and sound preference (localStorage).
 
 ## Tech
 
